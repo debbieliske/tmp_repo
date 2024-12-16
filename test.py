@@ -30,3 +30,10 @@ AzureDiagnostics
 | project TimeGenerated, IndexName_s, ThrottledQueries
 
 
+AzureDiagnostics
+| where ResourceType == "SEARCHSERVICE"
+| where OperationName == "Query.Search"
+| extend HourOfDay = tostring(format_datetime(todatetime(TimeGenerated), "HH"))
+| extend DayOfWeek = dayofweek(todatetime(TimeGenerated))
+| summarize QueryCount = count() by HourOfDay, DayOfWeek
+| project HourOfDay, DayOfWeek, QueryCount
