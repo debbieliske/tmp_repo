@@ -30,13 +30,3 @@ AzureDiagnostics
 | project TimeGenerated, IndexName_s, ThrottledQueries
 
 
-AzureDiagnostics
-| where ResourceType == "SEARCHSERVICES"
-| where OperationName == "Query.Search"
-| where TimeGenerated >= ago(7d)
-| summarize 
-    TotalQueries = count(),
-    SuccessfulQueries = countif(resultSignature_d == 200)
-    by IndexName_s, bin(TimeGenerated, 1h)
-| extend ServiceAvailability = (todouble(SuccessfulQueries) / todouble(TotalQueries)) * 100
-| project TimeGenerated, IndexName_s, ServiceAvailability
