@@ -31,9 +31,29 @@ AzureDiagnostics
 
 
 AzureDiagnostics
-| where ResourceType == "SEARCHSERVICE"
+| where ResourceType == "SEARCHSERVICES"
 | where OperationName == "Query.Search"
 | extend HourOfDay = tostring(format_datetime(todatetime(TimeGenerated), "HH"))
 | extend DayOfWeek = dayofweek(todatetime(TimeGenerated))
 | summarize QueryCount = count() by HourOfDay, DayOfWeek
 | project HourOfDay, DayOfWeek, QueryCount
+
+
+USAGE METRICS
+Total Queries Over Time
+
+AzureDiagnostics
+| where ResourceType == "SEARCHSERVICE"
+| where OperationName == "Query.Search"
+| summarize TotalQueries = count() by bin(TimeGenerated, 1h)
+| project TimeGenerated, TotalQueries
+
+Top Search Terms
+AzureDiagnostics
+| where ResourceType == "SEARCHSERVICE"
+| where OperationName == "Query.Search"
+| extend SearchTerm = tostring(Properties["searchText"])  // Replace with the correct property for search terms
+| summarize Count = count() by SearchTerm
+| top 10 by Count
+| project SearchTerm, Count
+
