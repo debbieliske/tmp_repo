@@ -57,3 +57,11 @@ AzureDiagnostics
 | top 10 by Count
 | project SearchTerm, Count
 
+Indexing Pipeline Performance
+Indexer Success/Failure Rate 
+
+AzureDiagnostics
+| where ResourceType == "SEARCHSERVICE"
+| where OperationName == "Indexer.Run"
+| summarize SuccessCount = countif(HttpStatusCode == 200), FailureCount = countif(HttpStatusCode != 200) by bin(TimeGenerated, 1h)
+| project TimeGenerated, SuccessCount, FailureCount
