@@ -65,3 +65,11 @@ AzureDiagnostics
 | where OperationName == "Indexer.Run"
 | summarize SuccessCount = countif(HttpStatusCode == 200), FailureCount = countif(HttpStatusCode != 200) by bin(TimeGenerated, 1h)
 | project TimeGenerated, SuccessCount, FailureCount
+
+Documents per Indexer Run
+AzureDiagnostics
+| where ResourceType == "SEARCHSERVICE"
+| where OperationName == "Indexer.Run"
+| extend DocumentsProcessed = toint(Properties["documentCount"])  // Replace with the correct property for documents processed
+| summarize AvgDocuments = avg(DocumentsProcessed) by bin(TimeGenerated, 1h)
+| project TimeGenerated, AvgDocuments
