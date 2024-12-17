@@ -1,130 +1,95 @@
-# Types of Errors and Warnings in Indexer Runs  
+# Azure RAG App Cutover Checklist
 
-During indexer executions in **Azure AI Search**, errors or warnings may occur due to issues with the data source, skillset configuration, or indexing pipeline. Understanding these errors and their causes is essential for troubleshooting and ensuring a smooth data enrichment and indexing process.  
-
----
-
-## Data Source Errors  
-**Description:** Errors that occur when the indexer is unable to access or read from the specified data source.  
-
-**Common Causes:**  
-- **Invalid or Incorrect Data Source Configuration:** Incorrect connection strings, paths, or permissions for Azure Data Lake or other data sources.  
-- **Missing Data:** Referenced files or blobs are missing in the specified location.  
-- **Access Denied:** The indexer lacks permissions to access the data source (e.g., RBAC misconfigurations).  
-- **Corrupt Data:** Data files are corrupted or unreadable.  
-
-**Impact:**  
-- The indexer may skip documents or fail entirely, resulting in incomplete indexing.  
-- Content may not appear in search queries, impacting downstream workflows.  
+## 1. Environment Configuration
+- **Production Azure Resource Group** is created and aligned with proper naming conventions.
+- Azure services used (e.g., Azure Cognitive Search, Azure OpenAI, Blob Storage, Azure Functions) are deployed to the production subscription.
+- **Endpoints** for production Azure OpenAI and Cognitive Search are configured.
+- Appropriate Azure **regions** are selected for performance and compliance needs.
+- Azure **Access Keys** and **Connection Strings** are securely stored using **Azure Key Vault**.
 
 ---
 
-## Skillset Errors  
-**Description:** Errors that occur when a skill in the skillset fails to process input data.  
-
-**Common Causes:**  
-- **Invalid Input:** Skills such as OCR or text splitting receive input in an unexpected format (e.g., passing non-image data to an OCR skill).  
-- **Missing Context:** The context path in the skill is incorrectly specified, causing the skill to fail when processing data.  
-- **Skill Configuration Issues:** Incorrect parameters, such as unsupported languages in OCR or missing visual feature settings in image skills.  
-- **Service Limits:** Hitting API limits for Cognitive Services (e.g., Azure Computer Vision).  
-
-**Impact:**  
-- Skills fail to enrich documents, leading to incomplete or inaccurate indexed data.  
-- For example, missing text from images due to OCR failures could reduce search coverage and result relevance.  
+## 2. Data Preparation and Indexing
+- All documents or knowledge sources are **cleaned**, **pre-processed**, and finalized.
+- Data ingestion pipeline (using Azure Blob Storage, Azure Cognitive Search Indexers, etc.) is configured for production data.
+- Production **Cognitive Search Index** is set up with optimized schema (including fields for embeddings, filters, and metadata).
+- Indexing has been **completed successfully**, and data availability is verified.
 
 ---
 
-## Document-Level Warnings  
-**Description:** Warnings that occur when the indexer processes a document but encounters a minor issue that does not prevent indexing.  
-
-**Common Causes:**  
-- **Partial Data Read:** Certain fields in the document may not conform to the schema (e.g., unexpected data types or missing fields).  
-- **Skillset Failures for Part of the Document:** A specific skill fails on part of the document (e.g., a single image within a PDF), but the rest of the document is indexed successfully.  
-- **Excessive Content:** The document content exceeds maximum size limits for indexing, causing some sections to be truncated.  
-
-**Impact:**  
-- Partial data is indexed, but some content may be missing, which can reduce search quality.  
-- Document warnings may lead to incomplete metadata or missing enriched fields like embeddings.  
+## 3. Azure OpenAI Service
+- Production **OpenAI models** (e.g., GPT-4, GPT-3.5) are deployed with appropriate quotas.
+- Model deployment is tested for latency and throughput at production levels.
+- **Prompt Engineering** is finalized for accuracy and consistency.
+- Rate limits and token quotas are reviewed for anticipated load.
 
 ---
 
-## Index Schema Mismatch Errors  
-**Description:** Errors caused when the enriched data does not match the expected schema of the target search index.  
-
-**Common Causes:**  
-- **Field Name Mismatch:** The skillset output is mapped to a field name that does not exist in the index schema.  
-- **Incorrect Field Types:** The data type of the enriched output (e.g., string vs. numeric) does not align with the field type defined in the index.  
-- **Missing Required Fields:** Certain required fields, like `id` (document key), are not populated during the indexing process.  
-
-**Impact:**  
-- Documents fail to index entirely, leading to missing content.  
-- Query results are incomplete, impacting user experience and downstream applications.  
+## 4. Application Performance and Scalability
+- Conduct **load testing** to ensure the app can handle production traffic.
+- Autoscaling rules are implemented for compute resources (e.g., Azure Kubernetes Service, Azure App Service).
+- Monitor latency of RAG pipeline components (retrieval, generation, API response).
+- Implement **caching strategies** where applicable to reduce load on the search index and OpenAI model.
 
 ---
 
-## Incremental Indexer Warnings  
-**Description:** Warnings related to incremental updates when using incremental enrichment or scheduled runs.  
-
-**Common Causes:**  
-- **Untracked Changes:** New or updated documents are not detected due to missing tracking information (e.g., `lastModified` metadata not updated).  
-- **Skipped Documents:** Some documents may be skipped due to unresolved errors in previous runs.  
-
-**Impact:**  
-- Newly ingested data may not appear in the search index.  
-- Index freshness is reduced, leading to outdated query results.  
+## 5. Security and Compliance
+- **Role-Based Access Control (RBAC)** is configured for Azure resources.
+- All sensitive credentials (e.g., API keys, secrets) are managed securely in **Azure Key Vault**.
+- **Network Security**: Enable Azure Virtual Networks (VNet), Private Endpoints, or IP whitelisting to secure access.
+- Enable **encryption at rest and in transit** for all services.
+- Conduct a **security review** and ensure compliance with relevant standards (e.g., GDPR, HIPAA).
 
 ---
 
-## Quota and Service Limit Errors  
-**Description:** Errors that occur when Azure resource or service limits are exceeded.  
-
-**Common Causes:**  
-- **Quota Limits:** Hitting indexer throughput limits, document size restrictions, or API call quotas.  
-- **High Index Size:** Index grows beyond the limits of the Azure AI Search tier (e.g., S1, S2).  
-- **Excessive Skill Execution:** High volume of calls to skills like OCR or embedding generation exceeds Cognitive Services quotas.  
-
-**Impact:**  
-- Indexer runs may stop or fail entirely, resulting in incomplete indexing.  
-- Costs may increase significantly due to excessive usage of Cognitive Services APIs.  
+## 6. Monitoring and Logging
+- Enable **Azure Monitor** and configure log analytics for all services.
+- Set up **Application Insights** to monitor app performance, failures, and user behavior.
+- Implement alerts for critical metrics such as latency, failures, or resource consumption.
+- Logging is configured for:
+    - Retrieval process (Cognitive Search)
+    - API calls to Azure OpenAI
+    - Backend components
 
 ---
 
-## Impact Summary Table  
-
-| **Error/Warning Type**          | **Cause**                                  | **Impact**                                           |  
-|---------------------------------|-------------------------------------------|-----------------------------------------------------|  
-| **Data Source Errors**          | Misconfigurations, missing files          | Indexer skips documents or fails completely.        |  
-| **Skillset Errors**             | Invalid input, context, or configuration  | Missing enrichments like OCR or embeddings.         |  
-| **Document Warnings**           | Partial failures, excessive content       | Partial data indexed, reducing search quality.      |  
-| **Schema Mismatch Errors**      | Name/type mismatch or missing fields      | Documents fail to index.                            |  
-| **Incremental Update Warnings** | Missing change tracking or skips          | Index freshness reduced.                            |  
-| **Quota/Service Limit Errors**  | Hitting API, throughput, or size limits   | Indexer stops; costs may increase.                  |  
+## 7. Backup and Disaster Recovery
+- Configure backups for Azure Blob Storage and Cognitive Search indexes.
+- Set up disaster recovery processes with geo-replication for critical Azure services.
+- Test failover and recovery processes.
 
 ---
 
-## How to Mitigate These Errors  
-
-### Data Source Errors  
-- Verify connection strings, permissions, and data paths.  
-- Set up monitoring to identify missing or corrupt data files.  
-
-### Skillset Errors  
-- Validate skill inputs, contexts, and parameters.  
-- Monitor Cognitive Services quotas and optimize skill execution.  
-
-### Document Warnings  
-- Break large documents into smaller pieces for processing.  
-- Address schema issues to ensure all fields align.  
-
-### Schema Mismatch Errors  
-- Review index schema and ensure skillset outputs map correctly.  
-- Log errors to identify missing or incorrect field mappings.  
-
-### Quota and Service Limits  
-- Scale Azure AI Search resources (replicas and partitions) as needed.  
-- Monitor Cognitive Services usage and adjust indexing schedules to avoid spikes.  
+## 8. Cost Optimization
+- Review production costs using **Azure Cost Management**.
+- Right-size Azure resources to avoid over-provisioning.
+- Implement quotas and budget alerts for cost management.
 
 ---
 
-## Summary  
-Understanding these errors and warnings during indexer runs is essential for maintaining a reliable and efficient **Azure AI Search** pipeline. By identifying root causes and applying targeted fixes, issues like incomplete indexing, missing enrichments, and performance bottlenecks can be mitigated to ensure smooth operations and high-quality search results.
+## 9. Production Deployment
+- CI/CD pipelines are configured (e.g., using **Azure DevOps** or GitHub Actions) to deploy changes safely.
+- Production **environment variables** are configured properly (API keys, endpoints).
+- Conduct a final round of **User Acceptance Testing (UAT)** in production-like conditions.
+- **Go/No-Go Review** is completed with all stakeholders.
+
+---
+
+## 10. Post-Cutover Monitoring
+- Monitor Azure OpenAI token usage and Cognitive Search query performance.
+- Verify **end-to-end RAG pipeline** for accuracy and latency.
+- Continuously review logs, metrics, and alerts during the stabilization period.
+- Gather feedback and optimize prompt tuning or indexing performance as needed.
+
+---
+
+## Tools and Documentation
+- Use **Azure Resource Manager (ARM)** templates or **Bicep** for repeatable infrastructure deployment.
+- Maintain clear **runbooks** for operational procedures (e.g., scaling, troubleshooting).
+- Update documentation for production processes, including API endpoints, usage limits, and maintenance plans.
+
+---
+
+## Optional Additions
+- Conduct a **penetration test** or security audit before full production launch.
+- Enable **Azure Policy** to enforce compliance standards on Azure resources.
