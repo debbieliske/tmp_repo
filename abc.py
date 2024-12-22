@@ -1,12 +1,13 @@
-let DefaultTimeRange = 14d;
-let QueryHealth = AzureDiagnostics
+AzureDiagnostics
 | where TimeGenerated > ago(DefaultTimeRange)
 | where OperationName == "Query.Search"
-| summarize 
-    TotalCount = count(),
-    SuccessCount = countif(ResultType == "Success"),
-    SignatureBreakdown = count() by IndexName_s, ResultSignature_d
-| extend SuccessRate = round(SuccessCount * 100.0 / TotalCount, 2)
-| project IndexName_s, ResultSignature_d, SignatureBreakdown, SuccessRate, TotalCount
-| order by TotalCount desc;
-QueryHealth
+| summarize TotalCount = count() by IndexName_s
+| join kind=inner (
+    AzureDiagnostics
+    | where TimeGenerated > ago(DefaultTimeRange)
+    | where OperationName == "Query.Search"
+    | summarize Count = count() by IndexName_s, ResultType
+) on IndexName_s
+| extend Percent = round(Count * 100.0 / TotalCount, 2)
+| project IndexName_s, ResultType, Count, Percent
+| order by IndexName_s, Count desc
