@@ -1,8 +1,0 @@
-🩺 – Stethoscope (Health Monitoring)
-❤️ – Heart (System Health)
-✅ – Checkmark (System Operational)
-📊 – Bar Chart (Performance Overview)
-⚙️ – Gear (System Metrics)
-🛡️ – Shield (Security & Health Monitoring)
-📈 – Upward Trend (Availability Over Time)
-🟢 – Green Circle (Service is Healthy)
