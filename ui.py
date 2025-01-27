@@ -43,6 +43,9 @@ def get_predictions(altitude, velocity, angle_of_attack, feature='heat_flux: qw 
 
     # Merge data
     X_data = pd.concat([X_data, xyz_df], axis=1)
+    X_data = X_data.drop_duplicates()  # Ensure no duplicate rows
+
+    # Scale input data
     X_scaled = mlp_scaler_inputs.transform(X_data)
 
     # Make predictions
