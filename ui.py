@@ -32,9 +32,8 @@ xyz_df = xyz_df[cols]
 
 # Function to get predictions
 def get_predictions(altitude, velocity, angle_of_attack, feature='heat_flux: qw (W/m^2)'):
-    # Simulate a processing start delay for the user to see "Processing..."
-    time.sleep(1)
-    # Create a DataFrame with the same input on each row
+    # Update the status to show progress
+    time.sleep(1)  # Simulate processing start delay
     X_data = pd.DataFrame({
         'altitude (m)': [altitude] * len(xyz_df),
         'velocity (m/s)': [velocity] * len(xyz_df),
@@ -59,7 +58,7 @@ def get_predictions(altitude, velocity, angle_of_attack, feature='heat_flux: qw 
     # Generate the plot
     plot_3d_scatter(results_df, feature)
 
-    return f"Inputs received: Altitude={altitude}, Velocity={velocity}, Angle of Attack={angle_of_attack}"
+    return "Predictions Complete. Click on Get Results to view surface plots."
 
 # Function to display images
 def display_images():
@@ -72,7 +71,6 @@ def display_images():
 def reset_interface():
     return (
         "",                        # prediction_output (TextBox)
-        "Ready for Input",         # spinner_output (TextBox)
         52500,                     # altitude_input (Number)
         5250,                      # velocity_input (Number)
         154,                       # angle_input (Number)
@@ -109,8 +107,7 @@ with gr.Blocks() as demo:
         btn_reset = gr.Button("Reset")
 
     # Output components
-    prediction_output = gr.Textbox(label="Prediction Status", interactive=False)
-    spinner_output = gr.Textbox(label="Status", interactive=False, value="Ready for Input")
+    prediction_output = gr.Textbox(label="Prediction Status", interactive=False, value="")
     btn_get_results = gr.Button("Get Results", visible=False)
 
     # Results section
@@ -121,11 +118,11 @@ with gr.Blocks() as demo:
     # Button Actions
     btn_get_predictions.click(
         fn=lambda altitude, velocity, angle, target: (
-            "Processing...",  # Update the status to "Processing..."
+            "Running model. Prediction in progress...",  # Show progress in the status box
             get_predictions(altitude, velocity, angle, target)
         ),
         inputs=[altitude_input, velocity_input, angle_input, target_input],
-        outputs=[spinner_output, prediction_output],
+        outputs=[prediction_output, prediction_output],
         show_progress=True
     )
 
@@ -142,7 +139,7 @@ with gr.Blocks() as demo:
         fn=reset_interface,
         inputs=[],
         outputs=[
-            prediction_output, spinner_output, altitude_input, velocity_input, angle_input,
+            prediction_output, altitude_input, velocity_input, angle_input,
             target_input, pred_image, res_image, btn_get_results, result_row
         ]
     )
