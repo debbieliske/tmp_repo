@@ -27,6 +27,11 @@ mlp_scaler_targets = joblib.load('../../models/enhanced_mlp_scaler_targets.pkl')
 
 # Load surface points data
 xyz_df = pd.read_feather('../../data/data.feather')
+
+# Extract angle of attack range dynamically
+angle_of_attack_min = xyz_df['angle_of_attack (deg)'].min()
+angle_of_attack_max = xyz_df['angle_of_attack (deg)'].max()
+
 cols = ['x_coordinate: xw (m)', 'y_coordinate: yw (m)', 'z_coordinate: zw (m)']
 xyz_df = xyz_df[cols]
 
@@ -71,9 +76,9 @@ def display_images():
 def reset_interface():
     return (
         "",                        # prediction_output (TextBox)
-        52500,                     # altitude_input (Number)
-        5250,                      # velocity_input (Number)
-        154,                       # angle_input (Number)
+        52500,                     # altitude_input (Slider)
+        5250,                      # velocity_input (Slider)
+        154,                       # angle_input (Slider)
         "heat_flux: qw (W/m^2)",   # target_input (Dropdown)
         None,                      # pred_image (Image)
         None,                      # res_image (Image),
@@ -90,9 +95,27 @@ with gr.Blocks() as demo:
 
     # Input fields
     with gr.Row():
-        altitude_input = gr.Number(label="Altitude (m)", value=52500)
-        velocity_input = gr.Number(label="Velocity (m/s)", value=5250)
-        angle_input = gr.Number(label="Angle of Attack (degrees)", value=154)
+        altitude_input = gr.Slider(
+            label="Altitude (m)",
+            minimum=30000,
+            maximum=80000,
+            value=52500,
+            step=100
+        )
+        velocity_input = gr.Slider(
+            label="Velocity (m/s)",
+            minimum=3000,
+            maximum=11000,
+            value=5250,
+            step=10
+        )
+        angle_input = gr.Slider(
+            label="Angle of Attack (degrees)",
+            minimum=angle_of_attack_min,
+            maximum=angle_of_attack_max,
+            value=154,
+            step=1
+        )
 
     # Dropdown for target
     target_input = gr.Dropdown(
