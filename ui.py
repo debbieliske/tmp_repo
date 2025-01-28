@@ -1,97 +1,6 @@
-import gradio as gr
-from PIL import Image
-from matplotlib import pyplot as plt
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-import tensorflow as tf
-import joblib
-import time
-from plots import plot_3d_scatter
-from metrics import rmse_metric, mae_metric, r2_metric
-
-# Prediction columns
-prediction_columns = target_cols = [
-    'surface_pressure: pw (Pa)', 'shear_stress_x: tauwx (Pa)', 'shear_stress_y: tauwy (Pa)',
-    'shear_stress_z: tauwz (Pa)', 'heat_flux: qw (W/m^2)', 'boundary_layer_thickness: delta (m)',
-    'reynolds_number-momentum_thickness'
-]
-
-# Load model and scalers
-mlp_model = tf.keras.models.load_model(
-    '../../models/enhanced_mlp_model.keras',
-    custom_objects={'rmse_metric': rmse_metric, 'mae_metric': mae_metric, 'r2_metric': r2_metric}
-)
-mlp_scaler_inputs = joblib.load('../../models/enhanced_mlp_scaler_inputs.pkl')
-mlp_scaler_targets = joblib.load('../../models/enhanced_mlp_scaler_targets.pkl')
-
-# Load surface points data
-xyz_df = pd.read_feather('../../data/data.feather')
-
-# Extract angle of attack range dynamically
-angle_of_attack_min = xyz_df['angle_of_attack (deg)'].min()
-angle_of_attack_max = xyz_df['angle_of_attack (deg)'].max()
-
-cols = ['x_coordinate: xw (m)', 'y_coordinate: yw (m)', 'z_coordinate: zw (m)']
-xyz_df = xyz_df[cols]
-
-# Function to get predictions
-def get_predictions(altitude, velocity, angle_of_attack, feature='heat_flux: qw (W/m^2)'):
-    # Update the status to show progress
-    time.sleep(1)  # Simulate processing start delay
-    X_data = pd.DataFrame({
-        'altitude (m)': [altitude] * len(xyz_df),
-        'velocity (m/s)': [velocity] * len(xyz_df),
-        'angle_of_attack (deg)': [angle_of_attack] * len(xyz_df)
-    })
-
-    # Merge data
-    X_data = pd.concat([X_data, xyz_df], axis=1)
-    X_data = X_data.drop_duplicates()  # Ensure no duplicate rows
-
-    # Scale input data
-    X_scaled = mlp_scaler_inputs.transform(X_data)
-
-    # Make predictions
-    predictions = mlp_model.predict(X_scaled)
-    predictions = mlp_scaler_targets.inverse_transform(predictions)
-
-    # Combine predictions with xyz_df
-    predictions_df = pd.DataFrame(predictions, columns=prediction_columns)
-    results_df = pd.concat([xyz_df, predictions_df], axis=1)
-
-    # Generate the plot
-    plot_3d_scatter(results_df, feature)
-
-    return "Predictions Complete. Click on Get Results to view surface plots."
-
-# Function to display images
-def display_images():
-    time.sleep(2)  # Simulate processing delay
-    pred_img = Image.open("surface_predictions.png")
-    res_img = Image.open("surface_residuals.png")
-    return pred_img, res_img
-
-# Function to reset the interface
-def reset_interface():
-    return (
-        "",                        # prediction_output (TextBox)
-        52500,                     # altitude_input (Slider)
-        5250,                      # velocity_input (Slider)
-        154,                       # angle_input (Slider)
-        "heat_flux: qw (W/m^2)",   # target_input (Dropdown)
-        None,                      # pred_image (Image)
-        None,                      # res_image (Image),
-        gr.update(visible=False),  # btn_get_results visibility (Button)
-        gr.update(visible=False)   # result_row visibility (Row)
-    )
-
-# Gradio interface
+# Modified Gradio interface
 with gr.Blocks() as demo:
     gr.Markdown("<h1 style='text-align: center;'>Deloitte AI-Accelerated Reentry Thermodynamics (DAART)</h1>")
-
-    # Entry image
-    entry_image = gr.Image(value="entry_corridor.png", label="Entry Corridor", interactive=False)
 
     # Input fields
     with gr.Row():
@@ -124,47 +33,29 @@ with gr.Blocks() as demo:
         value="heat_flux: qw (W/m^2)"
     )
 
-    # Buttons
-    with gr.Row():
-        btn_get_predictions = gr.Button("Get Predictions")
-        btn_reset = gr.Button("Reset")
+    # Single Button
+    btn_calculate = gr.Button("Calculate")
 
     # Output components
     prediction_output = gr.Textbox(label="Prediction Status", interactive=False, value="")
-    btn_get_results = gr.Button("Get Results", visible=False)
+    pred_image = gr.Image(label="Surface Predictions", visible=False)
+    ec_image = gr.Image(label="Entry Corridor", visible=False)
 
-    # Results section
-    with gr.Row(visible=False) as result_row:
-        pred_image = gr.Image(label="Surface Predictions")
-        res_image = gr.Image(label="Surface Residuals")
-
-    # Button Actions
-    btn_get_predictions.click(
+    # Button Action
+    btn_calculate.click(
         fn=lambda altitude, velocity, angle, target: (
-            "Running model. Prediction in progress...",  # Show progress in the status box
-            get_predictions(altitude, velocity, angle, target)
+            "Running model. Prediction in progress...",
+            get_predictions(altitude, velocity, angle, target),
         ),
         inputs=[altitude_input, velocity_input, angle_input, target_input],
         outputs=[prediction_output, prediction_output],
         show_progress=True
     )
 
-    btn_get_predictions.click(
-        lambda: gr.update(visible=True),
+    btn_calculate.click(
+        fn=lambda: ("Predictions Complete. Creating plots.", gr.update(visible=True), gr.update(visible=True)),
         inputs=[],
-        outputs=btn_get_results
-    )
-
-    btn_get_results.click(fn=display_images, outputs=[pred_image, res_image])
-    btn_get_results.click(lambda: gr.update(visible=True), inputs=[], outputs=result_row)
-
-    btn_reset.click(
-        fn=reset_interface,
-        inputs=[],
-        outputs=[
-            prediction_output, altitude_input, velocity_input, angle_input,
-            target_input, pred_image, res_image, btn_get_results, result_row
-        ]
+        outputs=[prediction_output, pred_image, ec_image]
     )
 
 # Launch the app
