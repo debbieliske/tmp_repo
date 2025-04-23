@@ -1,0 +1,75 @@
+RF-Fingerprint Demo – Rich-Text Walk-through
+
+⸻
+
+1  Scene-setter  (~20 s)
+
+What you’re about to see is a proof-of-concept that recognises a vessel purely from the RF “noise” it leaks (Wi-Fi, Bluetooth, radar meta-data). That lets us expose AIS spoofing and “dark” vessels.
+Three boats are replayed off Cape Lookout. Every RF ping is plotted; the dot’s colour tells you whether things look normal or suspicious.
+
+⸻
+
+2  Legend & colour code  (show bottom-left box)
+
+Colour	Status	Rule (spoken explanation)
+●	Normal	“Fingerprint matches the MMSI the AIS is broadcasting.”
+●	Spoof	“Fingerprint says Vessel X, but AIS claims a different MMSI.”
+●	Dark	“AIS is silent—no MMSI at all.”
+●	Mis-Spoof	“Model mis-IDs the boat and AIS is spoofing—the worst-case double error.”
+
+
+
+⸻
+
+3  Start playback  (click ▶ Start)
+
+Every 30 s of simulated time a new ping appears. The blue line is that vessel’s path toward shore; dots stay on the map so you get a breadcrumb trail.
+
+⸻
+
+4  Pop-up anatomy  (click any green dot)
+
+Pop-up field	Script line
+True ID	“Ground-truth MMSI in our validation set.”
+Predicted ID	“What the fingerprint model thinks this boat is.”
+Claimed ID	“Whatever MMSI the AIS transponder is yelling right now.”
+Status	“Normal / Spoof / Dark / Mis-Spoof, derived on the fly.”
+Wi-Fi / BT / RSSI	“Example RF meta-features—counts and signal strength.”
+
+
+
+⸻
+
+5  Highlight key cases  (zoom & click)
+	•	Red (Spoof) – ping 10 or 25 of V-222
+“Fingerprint says V-222, AIS tries 444 444 444 → Spoof.”
+	•	Orange (Dark) – ping 15 of V-333
+“No AIS, but fingerprint still alive → Dark vessel.”
+	•	Purple (Mis-Spoof) – ping 18 of V-111
+“Deliberately injected: true V-111, model guesses V-222, AIS spoofs 444 444 444 → purple Mis-Spoof.”
+
+⸻
+
+6  Wrap-up
+
+Key take-aways
+	1.	Claimed ID is never part of training; the model learns only from RF patterns.
+	2.	Post-processing compares Predicted vs. Claimed to raise Normal, Spoof or Dark.
+	3.	Mis-predictions are surfaced (purple) so accuracy can be audited.
+	4.	Swap in a real model and live RF feed—this UI works unchanged.
+
+⸻
+
+Glossary cheat-sheet
+
+Term	One-liner
+Fingerprint	“A vector of RF meta-features that is stable for a hull.”
+True ID	“Ground-truth MMSI label in the dataset.”
+Predicted ID	“Model’s best guess from the fingerprint.”
+Claimed ID	“The MMSI the AIS packet claims—easily spoofed or blank.”
+Normal	“Predicted ID = Claimed ID.”
+Spoof	“Predicted ID ≠ Claimed ID.”
+Dark	“Claimed ID is empty.”
+Mis-Spoof	“Model mis-IDs and AIS spoof in same frame (purple).”
+
+Use this structured talk-track to deliver a clear, confidence-building demo to both executives and technical reviewers.
