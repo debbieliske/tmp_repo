@@ -1,0 +1,8 @@
+# Ignore all binary files
+*.bin
+
+# Ignore all pickle files
+*.pickle
+
+# Ignore all SQLite3 database files
+*.sqlite3
