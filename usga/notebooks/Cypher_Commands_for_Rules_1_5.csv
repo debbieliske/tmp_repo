@@ -1,0 +1,11 @@
+cypher
+"MERGE (n:RuleSection {id: ""Rule 1""}) SET n.title = ""The Game, Player Conduct and the Rules"", n.text = ""Purpose of the Rule: Rule 1 introduces these central principles of the game..."""
+"MERGE (n:RuleSection {id: ""Rule 1.1""}) SET n.title = ""The Game of Golf"", n.text = ""Golf is played in a round of 18 holes on a course by striking a ball with a club from the teeing area..."""
+"MERGE (n:RuleSection {id: ""Rule 1.2""}) SET n.title = ""Standards of Player Conduct"", n.text = ""All players are expected to play in the spirit of the game by acting with integrity..."""
+"MERGE (n:Clarification {id: ""Rule 1.2a/1""}) SET n.title = ""Determining If a Player Has Committed Serious Misconduct"", n.text = ""Serious misconduct is behavior that shows a significant disregard for the etiquette of the game..."""
+"MERGE (n:Clarification {id: ""Rule 1.3b(1)/1""}) SET n.title = ""Disqualifying Players Who Know a Rule but Agree to Ignore It"", n.text = ""If two players agree to ignore a Rule and one of them knows it applies, both should be disqualified..."""
+"MATCH (c {id: ""Rule 1.1""}), (p {id: ""Rule 1""}) MERGE (c)-[:SUBRULE_OF]->(p)"
+"MATCH (c {id: ""Rule 1.2""}), (p {id: ""Rule 1""}) MERGE (c)-[:SUBRULE_OF]->(p)"
+"MATCH (c {id: ""Rule 1.2a/1""}), (r {id: ""Rule 1.2""}) MERGE (c)-[:CLARIFIES]->(r)"
+"MATCH (c {id: ""Rule 1.3b(1)/1""}), (r {id: ""Rule 1.3""}) MERGE (c)-[:CLARIFIES]->(r)"
+"MATCH (s {id: ""Rule 1.3b(1)/1""}), (t {id: ""Rule 1.3""}) MERGE (s)-[:REFERS_TO]->(t)"
