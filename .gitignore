@@ -6,3 +6,9 @@
 
 # Ignore all SQLite3 database files
 *.sqlite3
+
+*.env
+# Ignore all Jupyter Notebook checkpoints
+.ipynb_checkpoints
+# Ignore all Python cache files
+__pycache__/
